@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.env
+venv/
+env/
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+wheels/
+*.whl
+dist/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.key
+*.pem
+*.crt
+*.p12

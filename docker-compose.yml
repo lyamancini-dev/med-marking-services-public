@@ -1,0 +1,73 @@
+services:
+  his-adapter:
+    build: ./services/his-adapter
+    container_name: his-adapter
+    ports:
+      - "8000:8000"
+    networks:
+      - gis-network
+    volumes:
+      - his-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/his_mock.db
+      - CONNECTOR_URL=http://gis-mt-connector:8000
+    restart: unless-stopped
+
+  gis-mt-connector:
+    build: ./services/gis-mt-connector
+    container_name: gis-mt-connector
+    ports:
+      - "8001:8000"
+    networks:
+      - gis-network
+    volumes:
+      - connector-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/connector.db
+      - SIGNER_URL=${SIGNER_URL}
+      - TRUE_API_BASE_URL=${TRUE_API_BASE_URL}
+      - TRUE_API_BASE_URL_V4=https://markirovka.sandbox.crptech.ru/api/v4/true-api
+      - TOKEN_CACHE_SECONDS=${TOKEN_CACHE_SECONDS:-36000}
+      - RATE_LIMIT_PER_SEC=${RATE_LIMIT_PER_SEC:-50}
+      - PARTICIPANT_INN=${PARTICIPANT_INN}
+      - PRODUCT_GROUP=wheelchairs
+    restart: unless-stopped
+    depends_on:
+      - his-adapter
+
+  bff:
+    build: ./services/bff
+    container_name: bff
+    ports:
+      - "8002:8000"
+    networks:
+      - gis-network
+    environment:
+      - HIS_ADAPTER_URL=http://his-adapter:8000
+      - CONNECTOR_URL=http://gis-mt-connector:8000
+    restart: unless-stopped
+    depends_on:
+      - his-adapter
+      - gis-mt-connector
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_BFF_URL=http://localhost:8002/api/v1
+    container_name: med-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - gis-network
+    restart: unless-stopped
+    depends_on:
+      - bff
+
+networks:
+  gis-network:
+    driver: bridge
+
+volumes:
+  his-data:
+  connector-data:
